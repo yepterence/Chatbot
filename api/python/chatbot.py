@@ -1,14 +1,27 @@
-class BaseChatbot:
-    async def get_response(self, user_input):
-        raise NotImplementedError("Subclasses must implement this method")
+import asyncio
+from typing import AsyncGenerator, List, Dict
+from ollama import AsyncClient
 
+MODEL = "gemma3"
 
-class HardCodedChatbot(BaseChatbot):
-    async def get_response(self, user_input):
-        # Hard-coded logic for the chatbot
-        response = f"Chatbot: You said '{user_input}'. This is a simple response."
-        return response
+async def stream_chat(messages: List[Dict]) -> AsyncGenerator[Dict, None]:
+    """
+    Streams chat responses token-by-token from local Ollama (gemma3).
+    This function yields dicts: {"delta": "..."} and {"done": True}.
+    """
 
+    client = AsyncClient()
 
-async def get_chatbot_response(user_input, chatbot):
-    return await chatbot.get_response(user_input)
+    # Stream tokens from Ollama
+    stream = await client.chat(
+        model=MODEL,
+        messages=messages,
+        stream=True,
+    )
+
+    async for part in stream:
+        delta = part.get("message", {}).get("content")
+        if delta:
+            yield {"delta": delta}
+
+    yield {"done": True}
