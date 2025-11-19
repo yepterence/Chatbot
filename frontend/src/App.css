@@ -1,0 +1,64 @@
+body {
+  background: #f5f5f5;
+  margin: 0;
+  font-family: sans-serif;
+}
+
+.chat-container {
+  max-width: 600px;
+  margin: 2rem auto;
+}
+
+.chat-window {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 1rem;
+  height: 400px;
+  overflow-y: auto;
+  background: #f9f9f9;
+}
+
+.message {
+  margin: 0.5rem 0;
+  display: flex;
+}
+
+.message.user {
+  justify-content: flex-end;
+}
+
+.message.assistant {
+  justify-content: flex-start;
+}
+
+.bubble {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  max-width: 80%;
+  word-break: break-word;
+}
+
+.bubble.user {
+  background: #4caf50;
+  color: white;
+}
+
+.bubble.assistant {
+  background: #e0e0e0;
+  color: black;
+}
+
+textarea {
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  font-size: 1rem;
+  resize: none;
+}
+
+button {
+  margin-top: 0.5rem;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+}
