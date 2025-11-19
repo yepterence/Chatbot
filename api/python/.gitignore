@@ -1,2 +1,8 @@
-*/__pycache__/*
-*/venv/*
+# Python bytecode caches
+__pycache__/
+*/__pycache__/
+*.py[cod]
+
+# Virtual environments
+venv/
+*/venv/

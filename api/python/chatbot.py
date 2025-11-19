@@ -1,4 +1,5 @@
 import asyncio
+import json
 from typing import AsyncGenerator, List, Dict
 from ollama import AsyncClient
 
@@ -20,8 +21,8 @@ async def stream_chat(messages: List[Dict]) -> AsyncGenerator[Dict, None]:
     )
 
     async for part in stream:
-        delta = part.get("message", {}).get("content")
+        delta = part.get("message", {}).get("content", "")
         if delta:
-            yield {"delta": delta}
+            yield f"data: {json.dumps({'delta': delta})}\n\n"
 
-    yield {"done": True}
+    yield "data: {\"done\": true}\n\n"
