@@ -20,8 +20,8 @@ async def stream_chat(messages: List[Dict]) -> AsyncGenerator[Dict, None]:
         stream=True,
     )
 
-    async for part in stream:
-        delta = part.get("message", {}).get("content", "")
+    async for chunk in stream:
+        delta = chunk["message"]["content"]
         if delta:
             yield f"data: {json.dumps({'delta': delta})}\n\n"
 

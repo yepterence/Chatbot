@@ -1,5 +1,32 @@
 import type { Message } from "./interfaces";
 
+function extractDelta(rawChunk: string): string | null {
+  let line = rawChunk.trim();
+  if (!line.startsWith("data:")) return null;
+
+  const jsonStr = line.slice(5).trim();
+  if (!jsonStr) return null;
+
+  try {
+    const data = JSON.parse(jsonStr);
+    if (!data.delta) return null;
+
+    let delta = data.delta;
+
+    // recursively unwrap if delta itself is an SSE string
+    while (delta.trim().startsWith("data:")) {
+      const innerLine = delta.trim().slice(5).trim();
+      const innerData = JSON.parse(innerLine);
+      delta = innerData.delta ?? "";
+    }
+
+    return delta;
+  } catch (err) {
+    console.error("Failed to parse nested SSE chunk:", jsonStr, err);
+    return null;
+  }
+}
+
 export async function streamChatResponse(
   messages: Message[],
   onChunk: (chunk: string) => void
@@ -10,6 +37,8 @@ export async function streamChatResponse(
     body: JSON.stringify({ messages }),
   });
 
+  let fullText = "";
+  let buffer = "";
   const reader = res.body!.getReader();
   const decoder = new TextDecoder();
 
@@ -17,17 +46,15 @@ export async function streamChatResponse(
     const { value, done } = await reader.read();
     if (done) break;
 
-    const chunkStr = decoder.decode(value);
-    const lines = chunkStr
-      .split("\n")
-      .filter((line) => line.startsWith("data:"));
+    buffer += decoder.decode(value, { stream: true });
+    const parts = buffer.split("\n\n");
+    buffer = parts.pop() ?? "";
 
-    for (const line of lines) {
-      try {
-        const jsonData = JSON.parse(line.replace("data: ", ""));
-        onChunk(jsonData.delta);
-      } catch (err) {
-        console.error("Failed to parse chunk:", err);
+    for (const part of parts) {
+      const delta = extractDelta(part);
+      if (delta !== null) {
+        fullText += delta;
+        onChunk(delta);
       }
     }
   }
