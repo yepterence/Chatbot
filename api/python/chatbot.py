@@ -1,19 +1,19 @@
+#!/usr/bin/python3
+
 import asyncio
-import json
-from typing import AsyncGenerator, List, Dict
 from ollama import AsyncClient
+
+from models import StreamChunk
 
 MODEL = "gemma3"
 
-async def stream_chat(messages: List[Dict]) -> AsyncGenerator[Dict, None]:
+async def stream_chat(messages):
     """
-    Streams chat responses token-by-token from local Ollama (gemma3).
-    This function yields dicts: {"delta": "..."} and {"done": True}.
+    Streams dicts like {"delta": "..."} for the SSE endpoint to serialize.
     """
 
     client = AsyncClient()
 
-    # Stream tokens from Ollama
     stream = await client.chat(
         model=MODEL,
         messages=messages,
@@ -21,8 +21,19 @@ async def stream_chat(messages: List[Dict]) -> AsyncGenerator[Dict, None]:
     )
 
     async for chunk in stream:
-        delta = chunk["message"]["content"]
-        if delta:
-            yield f"data: {json.dumps({'delta': delta})}\n\n"
+        delta = chunk.get('message', {}).get('content', {})
+        response_data = StreamChunk(
+            content=delta,
+            finished=chunk.get('done', False)
+        )
+        yield f"data: {response_data.model_dump_json()}\n\n"
 
-    yield "data: {\"done\": true}\n\n"
+async def test_stream():
+    test_messages = [{"role": "user", "content": "What is 2+2?"}]
+
+    async for chunk in stream_chat(test_messages):
+        print("SSE chunk: ", chunk)
+
+
+if __name__ == "__main__":
+    asyncio.run(test_stream())

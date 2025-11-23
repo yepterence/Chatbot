@@ -1,12 +1,15 @@
+#!/usr/bin/python3
+
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
-from typing import Dict, List
-import json
 from fastapi.middleware.cors import CORSMiddleware
+import uvicorn
+
 from chatbot import stream_chat
+from models import ChatRequest
 
 app = FastAPI()
-origins = ["*"]
+origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -15,25 +18,21 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-async def event_stream(messages):
-    async for chunk in stream_chat(messages):
-        yield f"data: {json.dumps({'delta': chunk})}\n\n"
+@app.post("/chat")
+async def chat(request: ChatRequest):
+    return StreamingResponse(
+        stream_chat(request.messages),
+        media_type="text/event-stream"
+    )
 
 @app.get("/")
 async def root():
-    return {"message": "Welcome to my server"}
+    return {"message": "Welcome to my Chatbot"}
 
-@app.post("/chat")
-async def chat(payload: Dict):
-    """Stream chat response. Expected message body format:
-    {
-        "messages": [
-            {"role":"user", "content": "some messages"}
-        ]
-    }
-    """
-    messages: List[Dict] = payload.get("messages", [])
-    return StreamingResponse(
-        event_stream(messages),
-        media_type="text/event-stream"
+if __name__ == "__main__":
+    uvicorn.run(
+        "main:app",
+        host="127.0.0.1",
+        port=8000,
+        reload=True,
     )
