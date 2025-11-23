@@ -3,8 +3,12 @@
 from typing import Dict, List, Optional
 from pydantic import BaseModel
 
+class Message(BaseModel):
+    role: str
+    content: str
+
 class ChatRequest(BaseModel):
-    prompt:str
+    messages: List[Message]
 
 class StreamChunk(BaseModel):
     content: str
