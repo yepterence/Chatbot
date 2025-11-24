@@ -1,35 +1,8 @@
 import type { Message } from "./interfaces";
 
-function extractDelta(rawChunk: string): string | null {
-  let line = rawChunk.trim();
-  if (!line.startsWith("data:")) return null;
-
-  const jsonStr = line.slice(5).trim();
-  if (!jsonStr) return null;
-
-  try {
-    const data = JSON.parse(jsonStr);
-    if (!data.delta) return null;
-
-    let delta = data.delta;
-
-    // recursively unwrap if delta itself is an SSE string
-    while (delta.trim().startsWith("data:")) {
-      const innerLine = delta.trim().slice(5).trim();
-      const innerData = JSON.parse(innerLine);
-      delta = innerData.delta ?? "";
-    }
-
-    return delta;
-  } catch (err) {
-    console.error("Failed to parse nested SSE chunk:", jsonStr, err);
-    return null;
-  }
-}
-
 export async function streamChatResponse(
   messages: Message[],
-  onChunk: (chunk: string) => void
+  onChunk: (chunk: { content: string; finished: boolean }) => void
 ) {
   const res = await fetch("http://127.0.0.1:8000/chat", {
     method: "POST",
@@ -37,24 +10,36 @@ export async function streamChatResponse(
     body: JSON.stringify({ messages }),
   });
 
-  let fullText = "";
-  let buffer = "";
-  const reader = res.body!.getReader();
+  if (!res.ok) {
+    throw new Error("Network response is not ok");
+  }
+
+  if (!res.body) throw new Error("Response has no body");
+  const reader = res.body.getReader();
   const decoder = new TextDecoder();
+  let buffer = "";
 
   while (true) {
-    const { value, done } = await reader.read();
+    const { done, value } = await reader.read();
     if (done) break;
 
     buffer += decoder.decode(value, { stream: true });
-    const parts = buffer.split("\n\n");
-    buffer = parts.pop() ?? "";
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
 
-    for (const part of parts) {
-      const delta = extractDelta(part);
-      if (delta !== null) {
-        fullText += delta;
-        onChunk(delta);
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed.startsWith("data:")) continue;
+
+      const jsonStr = trimmed.slice(5).trim();
+      try {
+        const data = JSON.parse(jsonStr);
+        onChunk({
+          content: data.content ?? "",
+          finished: data.finished ?? false,
+        });
+      } catch (e) {
+        console.error("Failed to parse SSE chunk:", jsonStr, e);
       }
     }
   }
