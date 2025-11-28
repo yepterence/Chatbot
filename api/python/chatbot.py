@@ -4,6 +4,9 @@ import asyncio
 from ollama import AsyncClient
 
 from models import StreamChunk
+from logger import get_logger
+
+logger = get_logger(__name__)
 
 MODEL = "gemma3"
 
@@ -19,20 +22,22 @@ async def stream_chat(messages):
         messages=messages,
         stream=True,
     )
-
+    logger.info("Chat activated")
     async for chunk in stream:
         delta = chunk.get('message', {}).get('content', {})
+        logger.debug("Received chunk: %s", delta)
         response_data = StreamChunk(
             content=delta,
             finished=chunk.get('done', False)
         )
+        logger.debug("Streaming chunk: %s", response_data)
         yield f"data: {response_data.model_dump_json()}\n\n"
 
 async def test_stream():
     test_messages = [{"role": "user", "content": "What is 2+2?"}]
 
     async for chunk in stream_chat(test_messages):
-        print("SSE chunk: ", chunk)
+        logger.debug("SSE chunk: ", chunk)
 
 
 if __name__ == "__main__":
