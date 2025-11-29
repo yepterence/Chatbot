@@ -36,12 +36,9 @@ export const ChatWindow = () => {
       await streamChatResponse(
         [{ role: "user", content: userPrompt }],
         (chunk) => {
-          // check if component is mounted
-          if (!isMounted.current) return;
           //  Update buffer synchronously
           responseBuffer.current += chunk.content;
           const currentText = responseBuffer.current;
-
           setMessages((prev) => {
             const newHistory = [...prev];
             const lastMsg = newHistory[newHistory.length - 1];
@@ -69,7 +66,6 @@ export const ChatWindow = () => {
     } finally {
       setIsStreaming(false);
     }
-    console.log({ messages });
   };
   return (
     <div className="chat-container">
