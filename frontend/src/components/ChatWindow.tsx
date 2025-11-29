@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { streamChatResponse } from "../requests";
 import type { Message } from "../interfaces";
 
@@ -8,14 +8,6 @@ export const ChatWindow = () => {
   const [isStreaming, setIsStreaming] = useState(false);
   // Buffer for raw text stream
   const responseBuffer = useRef("");
-  // Handle mounting/unmounting of component
-  const isMounted = useRef(true);
-
-  useEffect(() => {
-    return () => {
-      isMounted.current = false;
-    };
-  }, []);
 
   const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
