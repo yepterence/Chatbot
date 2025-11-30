@@ -5,7 +5,7 @@ from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
-from chatbot import stream_chat
+from llm_client import stream_chat
 from models import ChatRequest
 
 app = FastAPI()
