@@ -5,8 +5,8 @@ from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
-from llm_client import stream_chat
-from models import ChatRequest
+from api.llm_client import stream_chat
+from api.models import ChatRequest
 
 app = FastAPI()
 origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
