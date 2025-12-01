@@ -6,3 +6,5 @@ tenacity==9.0.0
 pydantic==2.9.0
 aiofiles==23.2.1
 ollama==0.6.1
+pytest==8.3.5
+pytest-asyncio==0.24.0
