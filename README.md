@@ -54,3 +54,21 @@ This project demonstrates several practical patterns used in modern distributed 
 
 - Pub/Sub-style streaming - Application subscribes to continual SSE updates.
 - MVC-inspired layout
+
+## Local Development
+
+### API
+
+Launch api from project root using
+
+`uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload`
+
+### Frontend
+
+Launch frontend from frontend/ folder using
+
+`npm run dev`
+
+### Test
+
+Run `pytest` from the project root

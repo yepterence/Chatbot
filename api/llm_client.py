@@ -3,8 +3,8 @@
 import asyncio
 from ollama import AsyncClient
 
-from api.models import StreamChunk
-from api.logger import get_logger
+from .models import StreamChunk
+from .logger import get_logger
 
 logger = get_logger(__name__)
 logger.setLevel("DEBUG")
