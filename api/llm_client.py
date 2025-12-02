@@ -7,6 +7,7 @@ from api.models import StreamChunk
 from api.logger import get_logger
 
 logger = get_logger(__name__)
+logger.setLevel("DEBUG")
 
 MODEL = "gemma3"
 

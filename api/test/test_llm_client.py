@@ -11,7 +11,7 @@ async def test_stream_chat_valid_prompt():
     stream_response = stream_chat(prompt)
     _chunks = []
     async for chunk in stream_response:
-        assert isinstance(chunk, dict)
-        _chunks.append(chunk["delta"])
+        assert isinstance(chunk, str)
+        _chunks.append(chunk)
     final_text = "".join(_chunks)
     assert "4" in final_text
