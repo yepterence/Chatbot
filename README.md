@@ -61,7 +61,7 @@ This project demonstrates several practical patterns used in modern distributed 
 
 Launch api from project root using
 
-`uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload`
+`uvicorn api.main:app --reload`
 
 ### Frontend
 

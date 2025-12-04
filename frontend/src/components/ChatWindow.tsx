@@ -74,9 +74,6 @@ export const ChatWindow = () => {
           onKeyDown={handleKeyDown}
           disabled={isStreaming}
         />
-        <button onClick={handleSubmit} disabled={isStreaming}>
-          {isStreaming ? "..." : "Send"}
-        </button>
       </div>
     </div>
   );
