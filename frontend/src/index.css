@@ -25,9 +25,14 @@ body, html {
   padding: 20px;
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 80px);
   overflow: hidden;
   box-sizing: border-box;
+}
+.chat-container.empty {
+  justify-content: center;
+}
+.chat-container.filled {
+  justify-content: flex-start;
 }
 
 .chat-container > :not(.input-area) {
@@ -63,9 +68,9 @@ body, html {
 
 .input-area {
   display: flex;
-  gap: 10px;
   padding: 14px;
   background: #242424;
+  gap: 10px;
   position: sticky;
   bottom: 0;
 }
@@ -74,17 +79,8 @@ body, html {
   flex: 1;
   padding: 12px;
   border-radius: 8px;
-  border: 1px solid #d1d5db;
+  border: 1px solid gray;
   font-size: 1rem;
-}
-
-.input-area button {
-  padding: 12px 18px;
-  color: #242424;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
 }
 
 .input-area button:disabled {

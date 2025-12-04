@@ -14,6 +14,7 @@ export const ChatWindow = () => {
       await handleSubmit();
     }
   };
+  const isEmpty: boolean = messages.length === 0;
   const handleSubmit = async () => {
     if (!input.trim()) return;
 
@@ -60,7 +61,7 @@ export const ChatWindow = () => {
     }
   };
   return (
-    <div className="chat-container">
+    <div className={isEmpty ? "chat-container empty" : "chat-container filled"}>
       {messages.map((msg, idx) => (
         <div key={idx} className={`message ${msg.role}`}>
           {msg.content}
