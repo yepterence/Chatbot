@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 import asyncio
-from ollama import AsyncClient
+from ollama import AsyncClient, ChatResponse, chat
 
 from .models import StreamChunk
 from .logger import get_logger
@@ -33,6 +33,14 @@ async def stream_chat(messages):
         )
         logger.debug("Streaming chunk: %s", response_data)
         yield f"data: {response_data.model_dump_json()}\n\n"
+
+async def non_stream_chat(messages):
+    response: ChatResponse = chat(
+        model=MODEL,
+        messages=messages,
+        stream=False,
+    )
+    return response["message"]["content"]
 
 async def test_stream():
     test_messages = [{"role": "user", "content": "What is 2+2?"}]
