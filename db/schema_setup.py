@@ -2,7 +2,6 @@ from sqlalchemy import create_engine
 
 from api.config import Settings
 from .models import Base
-import os
 from dotenv import load_dotenv
 
 load_dotenv()

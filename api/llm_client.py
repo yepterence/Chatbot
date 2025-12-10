@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 
-import asyncio
 from ollama import AsyncClient, ChatResponse, chat
 
 from .models import StreamChunk
@@ -11,7 +10,7 @@ logger.setLevel("DEBUG")
 
 MODEL = "gemma3"
 
-async def stream_chat(messages):
+async def stream_chat(messages,):
     """
     Streams dicts like {"delta": "..."} for the SSE endpoint to serialize.
     """
@@ -25,7 +24,7 @@ async def stream_chat(messages):
     )
     logger.info("Chat activated")
     async for chunk in stream:
-        delta = chunk.get('message', {}).get('content', {})
+        delta = chunk['message']['content']
         logger.debug("Received chunk: %s", delta)
         response_data = StreamChunk(
             content=delta,
@@ -41,13 +40,3 @@ async def non_stream_chat(messages):
         stream=False,
     )
     return response["message"]["content"]
-
-async def test_stream():
-    test_messages = [{"role": "user", "content": "What is 2+2?"}]
-
-    async for chunk in stream_chat(test_messages):
-        logger.debug("SSE chunk: ", chunk)
-
-
-if __name__ == "__main__":
-    asyncio.run(test_stream())
