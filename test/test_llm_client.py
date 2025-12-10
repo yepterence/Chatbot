@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import json
 import pytest
 import asyncio
 import pytest_asyncio
@@ -12,6 +13,8 @@ async def test_stream_chat_valid_prompt():
     _chunks = []
     async for chunk in stream_response:
         assert isinstance(chunk, str)
-        _chunks.append(chunk)
+        assert chunk.startswith("data:")
+        _dict = json.loads(chunk[len("data:"):].strip())
+        _chunks.append(_dict.get("content"))
     final_text = "".join(_chunks)
-    assert "4" in final_text
+    assert "2 + 2 = 4" in final_text
