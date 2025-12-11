@@ -7,15 +7,15 @@ from api.config import Settings
 load_dotenv()
 settings = Settings()
 
-def get_engine():
-    DB_USER = settings.db_user
-    DB_PASS = settings.db_pass
-    DB_NAME = settings.db_name
-    DB_HOST = settings.db_host
-    DB_PORT = settings.db_port
+def get_engine(user=None, psw=None, host=None, port=None, db_name=None):
+    db_user = user or settings.db_user
+    db_pass = psw or settings.db_pass
+    db_name = db_name or settings.db_name
+    db_host = host or settings.db_host
+    db_port = port or settings.db_port
 
-    URL_DATABASE = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-    return create_engine(URL_DATABASE, echo=False)
+    url_database = f"postgresql://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"
+    return create_engine(url_database, echo=False)
 
 engine = get_engine()
 SessionLocal = sessionmaker(bind=engine)
