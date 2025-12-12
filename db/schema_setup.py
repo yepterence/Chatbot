@@ -1,13 +1,12 @@
 from dotenv import load_dotenv
 
-from api.config import Settings
-from api import logger
+from api.logger import get_logger
 from .models import Base
 
 load_dotenv()
-
+logger = get_logger("db_setup")
 def init_db(engine):
 
-    print("Creating tables...")
+    logger.debug("Creating tables...")
     Base.metadata.create_all(bind=engine)
-    print("Done!")
+    logger.debug("Done!")

@@ -9,13 +9,20 @@ MAX_BYTES = int(os.getenv("LOG_MAX_BYTES", 5 * 1024 * 1024))  # 5 MB default
 BACKUP_COUNT = int(os.getenv("LOG_BACKUP_COUNT", 3))
 
 def get_logger(name=None):
+    """Return a logger configured with rotation and console output.
+
+    Args:
+        name (str, optional): Logger name. Defaults to None.
+
+    Returns:
+        logging.Logger: Logger set to INFO with file and console handlers.
+    """
     logger = logging.getLogger(name)
     if logger.handlers:
         return logger
 
     logger.setLevel(logging.INFO)
 
-    # Rotating file handler
     fh = RotatingFileHandler(
         LOGFILE,
         maxBytes=MAX_BYTES,
