@@ -66,21 +66,13 @@ body, html {
 }
 
 
-.input-area {
+.input-text-area {
   display: flex;
   padding: 14px;
   background: #242424;
   gap: 10px;
   position: sticky;
   bottom: 0;
-}
-
-.input-area input {
-  flex: 1;
-  padding: 12px;
-  border-radius: 8px;
-  border: 1px solid gray;
-  font-size: 1rem;
 }
 
 .input-area button:disabled {

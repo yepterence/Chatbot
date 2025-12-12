@@ -8,9 +8,21 @@ export const ChatWindow = () => {
   const [isStreaming, setIsStreaming] = useState(false);
   // Buffer for raw text stream
   const responseBuffer = useRef("");
+  const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
-  const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
+  const handleKeyDown = async (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.shiftKey && e.key === "Enter") {
+      e.preventDefault();
+      const textArea = textAreaRef.current;
+      const start = textArea!.selectionStart;
+      const end = textArea!.selectionEnd;
+      const value = textArea!.value;
+      textArea!.value = value.substring(0, start) + "\n" + value.substring(end);
+      textArea!.selectionStart = start + 1;
+      textArea!.selectionEnd = start + 1;
+      textArea!.style.height = "auto";
+      textArea!.style.height = textArea?.scrollHeight + "px";
+    } else if (e.key === "Enter") {
       await handleSubmit();
     }
   };
@@ -68,11 +80,15 @@ export const ChatWindow = () => {
         </div>
       ))}
 
-      <div className="input-area">
-        <input
+      <div id="input-area" className="input-text-area">
+        <textarea
+          ref={textAreaRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
+          rows={1}
+          style={{ overflow: "hidden" }}
+          placeholder="Type your prompt..."
           disabled={isStreaming}
         />
       </div>
