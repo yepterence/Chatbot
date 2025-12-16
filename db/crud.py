@@ -11,11 +11,12 @@ def create_chat_session(title: str):
     return session
 
 
-def add_message(chat_id: int, role: str, content: str):
+def add_message(chat_id: int, role: str, content: str, datetime: str=None):
     db = SessionLocal()
     msg = ChatMessage(
         role=role,
         content=content,
+        created_at=datetime,
         chat_history_id=chat_id
     )
     db.add(msg)

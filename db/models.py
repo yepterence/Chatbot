@@ -14,7 +14,7 @@ class ChatMessage(Base):
     id = Column(Integer, primary_key=True)
     role = Column(String, nullable=False)
     content = Column(Text, nullable=False)
-    created_at =  Column(DateTime, default=dt.now)
+    created_at =  Column(String, default=dt.now().strftime("%m/%d/%Y, %H:%M:%S"))
     chat_history_id_fk = Column(Integer, ForeignKey("chat_history.id"))
     
     chat_history = relationship("ChatHistory", back_populates="chat_messages")

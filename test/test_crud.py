@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+from datetime import datetime as dt
 import pytest
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
@@ -31,11 +32,13 @@ def db_session(test_engine):
     db_session.close()
 
 def test_add_message(db_session):
-    msg = ChatMessage(role="user", content="hello")
+    current_time = dt.now().strftime("%m/%d/%Y, %H:%M:%S")
+    msg = ChatMessage(role="user", content="hello", created_at=current_time)
     db_session.add(msg)
     db_session.commit()
 
     result = db_session.query(ChatMessage).first()
+    assert isinstance(result.content, str)
+    assert isinstance(result.role, str)
+    assert isinstance(result.created_at, str)
     assert result.content == "hello"
-
-

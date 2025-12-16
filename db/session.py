@@ -1,5 +1,6 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, engine_from_config
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.engine.url import URL
 from dotenv import load_dotenv
 
 from api.config import Settings
@@ -14,8 +15,14 @@ def get_engine(user=None, psw=None, host=None, port=None, db_name=None):
     db_host = host or settings.db_host
     db_port = port or settings.db_port
 
-    url_database = f"postgresql://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"
-    return create_engine(url_database, echo=False)
+    url_database = URL.create("postgresql+psycopg2", db_user, db_pass, db_host, db_port, db_name)
+
+    config = {
+        "sqlalchemy.url": url_database,
+        "sqlalchemy.echo": False,
+        "sqlalchemy.future": True,
+    }
+    return engine_from_config(config, prefix="sqlalchemy.")
 
 engine = get_engine()
 SessionLocal = sessionmaker(bind=engine)
