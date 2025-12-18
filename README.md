@@ -71,4 +71,4 @@ Launch frontend from frontend/ folder using
 
 ### Test
 
-Run `pytest` from the project root
+Run `test/run_tests.sh` from the project root
