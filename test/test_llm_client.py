@@ -4,12 +4,13 @@ import json
 import pytest
 import asyncio
 import pytest_asyncio
-from api.llm_client import stream_chat
+from api.llm_client import Chat
 
 @pytest.mark.asyncio
 async def test_stream_chat_valid_prompt():
     prompt = [{"role":"user","content":"What is 2 + 2?"}]
-    stream_response = stream_chat(prompt)
+    chat = Chat("123", prompt)
+    stream_response = chat.stream_chat()
     _chunks = []
     async for chunk in stream_response:
         assert isinstance(chunk, str)
