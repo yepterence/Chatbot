@@ -44,8 +44,8 @@ class Chat:
             async for chunk in stream:
                 if self.cancel_signal:
                     logger.info("Chat request canceled. Stopping.")
-                    self.chunks_buffer = []
                     return
+                
                 delta = chunk['message']['content']
                 logger.debug("Received chunk: %s", delta)
                 response_data = StreamChunk(
@@ -59,12 +59,10 @@ class Chat:
 
         logger.info("LLM Response stream concluded.")
         self.finalize_streams()
-        return
 
     async def write_msg_to_db(self, table, payload):
         create_chat_session()
         add_message(table, payload)
-        pass
 
     async def generate_title(self):
         system_msg = [{"role": "system",
@@ -82,12 +80,12 @@ class Chat:
         return response["message"]["content"]
     
     def finalize_streams(self):
-        if self.cancel_signal:
+        if self.cancel_signal or self.prompt_request_finalized:
             return
-        if self.prompt_request_finalized:
-            return
+        
         if not self.llm_response_done:
             logger.error("Failed to conclude LLM response stream")
             return
+        
         self.finalized_message = "".join(self.chunks_buffer)
         self.prompt_request_finalized = True

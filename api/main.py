@@ -3,10 +3,11 @@
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
+from uuid import uuid4
 import uvicorn
 
-from .llm_client import stream_chat, non_stream_chat
-from .models import ChatRequest
+from .llm_client import Chat
+from .models import CancelRequest, ChatRequest
 
 app = FastAPI()
 origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
@@ -18,20 +19,42 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
+class ChatManager:
+    def __init__(self)-> None:
+        self.chats: dict[str, Chat] = {}
+    
+    def create_chat_instance(self, prompt):
+        chat_id = str(uuid4())
+        chat_instance = Chat(chat_id, prompt)
+        self.chats[chat_id] = chat_instance
+        return chat_instance
+    
+    def get_chat(self, chat_id):
+        return self.chats.get(chat_id)
+    
+    def cancel_chat(self, chat_id):
+        chat = self.get_chat(chat_id)
+        if chat:
+            chat.cancel_signal = True
+    
+    def remove_chat(self, chat_id):
+        self.chats.pop(chat_id)
+        
+chat_manager = ChatManager()
 @app.post("/chat")
 async def chat(request: ChatRequest):
+    chat_instance = chat_manager.create_chat_instance(request.messages)
+    
     return StreamingResponse(
-        stream_chat(request.messages),
-        media_type="text/event-stream"
-    )
+        chat_instance.stream_chat(),
+        media_type="text/event-stream",
+        headers={"X-Chat-Id": chat_instance.session_id}
+        )
 
-@app.post("/chat/title")
-async def chat_title(request: ChatRequest):
-    system_msg = {"role": "system",
-                  "content": "Generate a short, clear title (max 5 words) summarizing the user's message."}
-    messages = system_msg + request.messages
-    title = await non_stream_chat(messages)
-    return {"title": title}
+@app.post("/chat/cancel")
+async def cancel_prompt(request: CancelRequest):
+    chat_manager.cancel_chat(request.chat_id)
+    return {"status": "cancelled"}
 
 
 @app.get("/")
