@@ -10,6 +10,9 @@ class Message(BaseModel):
 class ChatRequest(BaseModel):
     messages: List[Message]
 
+class CancelRequest(BaseModel):
+    chat_id: str
+    
 class StreamChunk(BaseModel):
     content: str
     finished: bool
