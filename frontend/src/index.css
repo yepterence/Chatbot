@@ -68,11 +68,20 @@ body, html {
 
 .input-text-area {
   display: flex;
-  padding: 14px;
+  padding: 45px;
   background: #242424;
+  color:azure;
   gap: 10px;
   position: sticky;
   bottom: 0;
+}
+
+#input-area textarea{
+  color: grey;
+  display: flex;
+  width: 100%;
+  border-radius: 6px;
+  padding: 1.5%;
 }
 
 .input-area button:disabled {
