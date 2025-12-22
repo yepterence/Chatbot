@@ -11,13 +11,13 @@ logger.setLevel("DEBUG")
 MODEL = "gemma3"
 
 class Chat:
-    def __init__(self, session_id, prompt) -> None:
+    def __init__(self, chat_id, prompt) -> None:
         self.title = None
         self.prompt = prompt
         self.chunks_buffer = []
         self.llm_response_done = False
         self.cancel_signal = False
-        self.session_id = session_id
+        self.chat_id = chat_id
         self.prompt_request_finalized = False
         self.finalized_message = ""
 
@@ -58,7 +58,6 @@ class Chat:
                 yield f"data: {response_data.model_dump_json()}\n\n"
 
         logger.info("LLM Response stream concluded.")
-        self.finalize_streams()
 
     async def write_msg_to_db(self, table, payload):
         create_chat_session()
