@@ -1,6 +1,7 @@
-import { useState, useRef } from "react";
+import React, { useState, useRef } from "react";
 import { streamChatResponse } from "../requests";
 import type { Message } from "../interfaces";
+import ReactMarkdown from "react-markdown";
 
 export const ChatWindow = () => {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -76,7 +77,7 @@ export const ChatWindow = () => {
     <div className={isEmpty ? "chat-container empty" : "chat-container filled"}>
       {messages.map((msg, idx) => (
         <div key={idx} className={`message ${msg.role}`}>
-          {msg.content}
+          <ReactMarkdown>{msg.content}</ReactMarkdown>
         </div>
       ))}
 
