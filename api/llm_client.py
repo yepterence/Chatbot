@@ -1,10 +1,10 @@
 #!/usr/bin/python3
 
 from ollama import AsyncClient, ChatResponse, chat
-
 from .models import StreamChunk
 from .logger import get_logger
-from db.crud import create_chat_session, add_message
+from .database import AsyncSessionLocal
+from .database import create_chat_session, add_message
 
 logger = get_logger(__name__)
 logger.setLevel("DEBUG")
@@ -59,9 +59,10 @@ class Chat:
 
         logger.info("LLM Response stream concluded.")
 
-    async def write_msg_to_db(self, table, payload):
-        create_chat_session()
-        add_message(table, payload)
+    async def write_msg_to_db(self, title, role, db):
+        async with AsyncSessionLocal() as db:
+            chat_history = await create_chat_session(title, db)
+            await add_message(chat_history.id, role, db)
 
     async def generate_title(self):
         system_msg = [{"role": "system",

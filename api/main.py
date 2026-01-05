@@ -7,6 +7,7 @@ from uuid import uuid4
 import uvicorn
 
 from api import logger
+from .database import init_db
 
 from .llm_client import Chat
 from .models import CancelRequest, ChatRequest
@@ -67,6 +68,10 @@ class ChatManager:
 
 chat_manager = ChatManager()
 
+@app.on_event("startup")
+async def startup_event():
+    await init_db()
+
 @app.post("/chat")
 async def chat(request: ChatRequest):
     chat_instance = chat_manager.create_chat_instance(request.messages)
@@ -83,7 +88,9 @@ async def cancel_prompt(request: CancelRequest):
     api_logger.info("Cancelling chat for %s", request.chat_id)
     return {"status": "cancelled"}
 
-
+# @app.get("/chat/chat_id")
+# async def get_chat_by_id(request):
+    
 @app.get("/")
 async def root():
     return {"message": "Welcome to my Chatbot"}
