@@ -53,19 +53,13 @@ class ChatManager:
             if chat.llm_response_done and not chat.cancel_signal:
                 api_logger.info("Finished streaming llm response. Generating title and persisting to chat tables")
                 title = await chat.generate_title()
-                chat_msg_payload = {
-                    "id": chat.chat_id,
-                    "role": "assistant",
-                    "content": chat.finalized_message,
-                }
-                await chat.write_msg_to_db("chat_history", title)
-                await chat.write_msg_to_db("chat_messages", chat_msg_payload)
+                await chat.persist_chat(title)
                 api_logger.info("Finished writing to chat tables")
         except Exception as e:
             api_logger.exception("Failed to stream llm response", exc_info=e)
         finally:
             self.remove_chat(chat.chat_id)
-
+    
 chat_manager = ChatManager()
 
 @app.on_event("startup")
@@ -77,7 +71,7 @@ async def chat(request: ChatRequest):
     chat_instance = chat_manager.create_chat_instance(request.messages)
     
     return StreamingResponse(
-        chat_instance.stream_chat(),
+        chat_manager.stream_and_cleanup(chat_instance),
         media_type="text/event-stream",
         headers={"X-Chat-Id": chat_instance.chat_id}
         )

@@ -61,6 +61,7 @@ async def create_chat_session(title: str, db: AsyncSession) -> ChatHistory:
     session = ChatHistory(chat_title=title)
     db.add(session)
     await db.flush()
+    await db.commit()
     return session
 
 async def add_message(
@@ -78,6 +79,7 @@ async def add_message(
     )
     db.add(msg)
     await db.flush()
+    await db.commit()
     return msg
 
 @asynccontextmanager
