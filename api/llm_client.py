@@ -61,9 +61,18 @@ class Chat:
 
     async def persist_chat(self, title):
         async with get_session() as db:
-            chat_history = await create_chat_session(title, db)
+            chat_history = await create_chat_session(title=title, db=db)
+            history_id = chat_history.id
+            user_prompt_content = self.prompt[-1].content
             await add_message(
-                    chat_id=chat_history.id,
+                    chat_id=history_id,
+                    role="user",
+                    content=user_prompt_content,
+                    created_at=None,
+                    db=db,
+                )
+            await add_message(
+                    chat_id=history_id,
                     role="assistant",
                     content=self.finalized_message,
                     created_at=None,
@@ -85,7 +94,7 @@ class Chat:
         )
         return response["message"]["content"]
     
-    def finalize_streams(self):
+    async def finalize_streams(self):
         if self.cancel_signal or self.prompt_request_finalized:
             return
         

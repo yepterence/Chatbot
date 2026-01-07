@@ -35,7 +35,9 @@ class ChatHistory(Base):
     id = Column(Integer, primary_key=True)
     chat_title = Column(String, nullable=False)
 
-    chat_messages = relationship("ChatMessage", back_populates="chat_history")
+    chat_messages = relationship("ChatMessage", 
+                                 back_populates="chat_history",
+                                 cascade="all, delete-orphan")
 
 settings = Settings()
 

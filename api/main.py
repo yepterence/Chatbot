@@ -51,7 +51,7 @@ class ChatManager:
             async for chunk in chat.stream_chat():
                 yield chunk
             if chat.llm_response_done and not chat.cancel_signal:
-                chat.finalize_streams()
+                await chat.finalize_streams()
                 api_logger.info("Finished streaming llm response. Generating title and persisting to chat tables")
                 title = await chat.generate_title()
                 await chat.persist_chat(title)
