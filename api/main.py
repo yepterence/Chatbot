@@ -8,7 +8,7 @@ from uuid import uuid4
 import uvicorn
 
 from api import logger
-from .database import get_session, init_db, get_chat_messages
+from .database import get_chat_history, get_session, init_db, get_chat_messages
 from .llm_client import Chat
 from .models import CancelRequest, ChatRequest
 
@@ -90,6 +90,13 @@ async def get_chat_messages_by_id(chat_id, session: AsyncSession = Depends(get_s
         raise HTTPException(status_code=404, detail="Chat messages couldnt be found for id")
     return chat.chat_messages
 
+@app.get("chat/chat_history")
+async def get_history(session: AsyncSession = Depends(get_session)):
+    chat_history = await get_chat_history(session)
+    if not chat_history:
+        return []
+    return chat_history
+    
 @app.get("/")
 async def root():
     return {"message": "Welcome to my Chatbot"}

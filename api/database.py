@@ -89,6 +89,11 @@ async def get_chat_messages(session: AsyncSession, chat_id: int):
     res = await session.execute(stmt)
     return res.scalar_one_or_none()
 
+async def get_chat_history(session: AsyncSession):
+    stmt = select(ChatHistory)
+    res = await session.execute(stmt)
+    return res.scalars().all()
+
 @asynccontextmanager
 async def get_session():
     async with AsyncSessionLocal() as session:

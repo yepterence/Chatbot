@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-from typing import Dict, List, Optional
+from typing import List, Optional
 from pydantic import BaseModel
 
 class Message(BaseModel):
