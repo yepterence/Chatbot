@@ -1,5 +1,27 @@
 import type { Message } from "./interfaces";
-
+export async function fetchChatHistoryList() {
+  const url = "http://127.0.0.1:8000/chat/chat_history";
+  try {
+    const res = await fetch(url);
+    return res.json();
+  } catch (error) {
+    console.error("Failed to fetch chat history", error);
+    throw error;
+  }
+}
+export async function fetchChatMessages(chatId: Number) {
+  const url = `http://127.0.0.1:8000/chat/${chatId}`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      throw new Error(`Error ${res.status}: Could not find chat messages.`);
+    }
+    return await res.json();
+  } catch (error) {
+    console.error("Failed to fetch chat messages:", error);
+    throw error;
+  }
+}
 export async function streamChatResponse(
   messages: Message[],
   onChunk: (chunk: { content: string; finished: boolean }) => void
