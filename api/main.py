@@ -1,14 +1,14 @@
 #!/usr/bin/python3
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import uuid4
 import uvicorn
 
 from api import logger
-from .database import init_db
-
+from .database import get_session, init_db, get_chat_messages
 from .llm_client import Chat
 from .models import CancelRequest, ChatRequest
 
@@ -83,9 +83,13 @@ async def cancel_prompt(request: CancelRequest):
     api_logger.info("Cancelling chat for %s", request.chat_id)
     return {"status": "cancelled"}
 
-# @app.get("/chat/chat_id")
-# async def get_chat_by_id(request):
-    
+@app.get("/chat/{chat_id}")
+async def get_chat_messages_by_id(chat_id, session: AsyncSession = Depends(get_session)):
+    chat = await get_chat_messages(session, chat_id)
+    if not chat:
+        raise HTTPException(status_code=404, detail="Chat messages couldnt be found for id")
+    return chat.chat_messages
+
 @app.get("/")
 async def root():
     return {"message": "Welcome to my Chatbot"}

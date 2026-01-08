@@ -7,8 +7,8 @@ from sqlalchemy.ext.asyncio import (
     AsyncSession,
 )
 from api.config import Settings
-from sqlalchemy import Column, ForeignKey, String, Text, DateTime, Integer
-from sqlalchemy.orm import DeclarativeBase, relationship
+from sqlalchemy import Column, ForeignKey, String, Text, DateTime, Integer, select
+from sqlalchemy.orm import DeclarativeBase, relationship, selectinload
 from datetime import datetime as dt
 
 from api.logger import get_logger
@@ -59,18 +59,18 @@ AsyncSessionLocal = async_sessionmaker(
     class_=AsyncSession,
 )
 
-async def create_chat_session(title: str, db: AsyncSession) -> ChatHistory:
+async def create_chat_session(title: str, session: AsyncSession) -> ChatHistory:
     session = ChatHistory(chat_title=title)
-    db.add(session)
-    await db.flush()
-    await db.commit()
+    session.add(session)
+    await session.flush()
+    await session.commit()
     return session
 
 async def add_message(
     chat_id: int,
     role: str,
     content: str,
-    db: AsyncSession,
+    session: AsyncSession,
     created_at: str,
 ) -> ChatMessage:
     msg = ChatMessage(
@@ -79,10 +79,15 @@ async def add_message(
         created_at=created_at,
         chat_history_id_fk=chat_id,
     )
-    db.add(msg)
-    await db.flush()
-    await db.commit()
+    session.add(msg)
+    await session.flush()
+    await session.commit()
     return msg
+
+async def get_chat_messages(session: AsyncSession, chat_id: int):
+    stmt = select(ChatHistory).options(selectinload(ChatHistory.chat_messages)).where(ChatHistory.id == chat_id)
+    res = await session.execute(stmt)
+    return res.scalar_one_or_none()
 
 @asynccontextmanager
 async def get_session():
