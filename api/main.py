@@ -19,7 +19,7 @@ api_logger = logger.get_logger("api_main")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"]
 )
@@ -83,16 +83,18 @@ async def cancel_prompt(request: CancelRequest):
     api_logger.info("Cancelling chat for %s", request.chat_id)
     return {"status": "cancelled"}
 
-@app.get("/chat/{chat_id}")
+@app.get("/chat/get/{chat_id}")
 async def get_chat_messages_by_id(chat_id, session: AsyncSession = Depends(get_session)):
     chat = await get_chat_messages(session, chat_id)
     if not chat:
         raise HTTPException(status_code=404, detail="Chat messages couldnt be found for id")
     return chat.chat_messages
 
-@app.get("chat/chat_history")
+@app.get("/chat/history")
 async def get_history(session: AsyncSession = Depends(get_session)):
+    print("Found chat history endpoint")
     chat_history = await get_chat_history(session)
+    print(chat_history)
     if not chat_history:
         return []
     return chat_history

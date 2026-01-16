@@ -61,7 +61,7 @@ class Chat:
 
     async def persist_chat(self, title):
         async with get_session() as db:
-            chat_history = await create_chat_session(title=title, db=db)
+            chat_history = await create_chat_session(title=title, session=db)
             history_id = chat_history.id
             user_prompt_content = self.prompt[-1].content
             await add_message(
@@ -69,19 +69,19 @@ class Chat:
                     role="user",
                     content=user_prompt_content,
                     created_at=None,
-                    db=db,
+                    session=db,
                 )
             await add_message(
                     chat_id=history_id,
                     role="assistant",
                     content=self.finalized_message,
                     created_at=None,
-                    db=db,
+                    session=db,
                 )
 
     async def generate_title(self):
         system_msg = [{"role": "system",
-                    "content": "Generate a short, clear title (max 5 words) summarizing the user's message."}]
+                    "content": "Generate a short, clear title (max 5 words) summarizing the user's message and return strictly that."}]
         title_messages = system_msg + self.prompt
         title = await self.non_stream_response(title_messages)
         return title

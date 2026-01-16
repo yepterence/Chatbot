@@ -60,8 +60,8 @@ AsyncSessionLocal = async_sessionmaker(
 )
 
 async def create_chat_session(title: str, session: AsyncSession) -> ChatHistory:
-    session = ChatHistory(chat_title=title)
-    session.add(session)
+    chat_history_session = ChatHistory(chat_title=title)
+    session.add(chat_history_session)
     await session.flush()
     await session.commit()
     return session
@@ -85,14 +85,22 @@ async def add_message(
     return msg
 
 async def get_chat_messages(session: AsyncSession, chat_id: int):
-    stmt = select(ChatHistory).options(selectinload(ChatHistory.chat_messages)).where(ChatHistory.id == chat_id)
-    res = await session.execute(stmt)
-    return res.scalar_one_or_none()
+
+    try:
+        clean_chat_id = int(chat_id)
+    except (ValueError, TypeError):
+        return None
+    async with session as db_session:
+        stmt = select(ChatHistory).options(selectinload(ChatHistory.chat_messages)).where(ChatHistory.id == clean_chat_id)
+        res = await db_session.execute(stmt)
+        return res.scalar_one_or_none()
 
 async def get_chat_history(session: AsyncSession):
-    stmt = select(ChatHistory)
-    res = await session.execute(stmt)
-    return res.scalars().all()
+
+    async with session as db_session:
+        stmt = select(ChatHistory)
+        res = await db_session.execute(stmt)
+        return res.scalars().all()
 
 @asynccontextmanager
 async def get_session():
