@@ -1,16 +1,17 @@
 import type { Message } from "./interfaces";
 export async function fetchChatHistoryList() {
-  const url = "http://127.0.0.1:8000/chat/chat_history";
+  const url = "http://127.0.0.1:8000/chat/history";
   try {
     const res = await fetch(url);
-    return res.json();
+    const chatHistory = res.json();
+    return Array.isArray(chatHistory) ? chatHistory : [];
   } catch (error) {
     console.error("Failed to fetch chat history", error);
     throw error;
   }
 }
 export async function fetchChatMessages(chatId: Number) {
-  const url = `http://127.0.0.1:8000/chat/${chatId}`;
+  const url = `http://127.0.0.1:8000/chat/get/${chatId}`;
   try {
     const res = await fetch(url);
     if (!res.ok) {

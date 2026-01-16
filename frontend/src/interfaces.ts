@@ -7,8 +7,3 @@ export interface ChatHistoryItem {
   id: number;
   chat_title: string;
 }
-
-export interface ChatHistoryProps {
-  onSelectChat: (id: number) => void;
-  selectedChatId?: number;
-}
