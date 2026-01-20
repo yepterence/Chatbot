@@ -92,12 +92,15 @@ async def get_chat_messages_by_id(chat_id, session: AsyncSession = Depends(get_s
 
 @app.get("/chat/history")
 async def get_history(session: AsyncSession = Depends(get_session)):
-    print("Found chat history endpoint")
+    
     chat_history = await get_chat_history(session)
-    print(chat_history)
+
     if not chat_history:
         return []
-    return chat_history
+    
+    chat_history_list = [{'id': chat_history_obj.id ,'chat_title': chat_history_obj.chat_title} for chat_history_obj in chat_history]
+
+    return chat_history_list
     
 @app.get("/")
 async def root():

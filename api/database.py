@@ -64,7 +64,7 @@ async def create_chat_session(title: str, session: AsyncSession) -> ChatHistory:
     session.add(chat_history_session)
     await session.flush()
     await session.commit()
-    return session
+    return chat_history_session
 
 async def add_message(
     chat_id: int,
