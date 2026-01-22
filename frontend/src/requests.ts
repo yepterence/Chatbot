@@ -1,15 +1,24 @@
 import type { Message } from "./interfaces";
+/**
+ * Fetch the list of all chat history items.
+ * @returns
+ */
 export async function fetchChatHistoryList() {
   const url = "http://127.0.0.1:8000/chat/history";
   try {
     const res = await fetch(url);
-    const chatHistory = res.json();
+    const chatHistory = await res.json();
     return Array.isArray(chatHistory) ? chatHistory : [];
   } catch (error) {
     console.error("Failed to fetch chat history", error);
     throw error;
   }
 }
+/**
+ * Fetch all messages for a specific chat
+ * @param chatId
+ * @returns
+ */
 export async function fetchChatMessages(chatId: Number) {
   const url = `http://127.0.0.1:8000/chat/get/${chatId}`;
   try {
@@ -23,6 +32,12 @@ export async function fetchChatMessages(chatId: Number) {
     throw error;
   }
 }
+
+/**
+ * Stream chat responses from LLM client
+ * @param messages
+ * @param onChunk
+ */
 export async function streamChatResponse(
   messages: Message[],
   onChunk: (chunk: { content: string; finished: boolean }) => void
