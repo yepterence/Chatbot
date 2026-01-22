@@ -1,16 +1,39 @@
-import React, { useState, useRef } from "react";
-import { streamChatResponse } from "../requests";
+import React, { useState, useRef, useEffect } from "react";
+import { fetchChatMessages, streamChatResponse } from "../requests";
 import type { Message } from "../interfaces";
 import ReactMarkdown from "react-markdown";
+import { useSelectedChatStore } from "../ApplicationStore";
+import { useQuery } from "@tanstack/react-query";
 
 export const ChatWindow = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
+  // Get selected chat from Zustand store
+  const selectedChatId = useSelectedChatStore((state) => state.id);
+  const selectedChatTitle = useSelectedChatStore((state) => state.chat_title);
+  const resetSelectedChat = useSelectedChatStore(
+    (state) => state.resetSelectedChat
+  );
   // Buffer for raw text stream
   const responseBuffer = useRef("");
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
+  const { data: historicalMessages, isLoading: isLoadingHistory } = useQuery<
+    Message[]
+  >({
+    queryKey: ["chat-messages", selectedChatId],
+    queryFn: () => fetchChatMessages(selectedChatId!),
+    // CRITICAL: Only fetch when a chat is selected
+    enabled: selectedChatId !== null,
+    // Prevent refetching on window focus for chat history
+    refetchOnWindowFocus: false,
+  });
 
+  useEffect(() => {
+    if (historicalMessages && selectedChatId) {
+      setMessages(historicalMessages);
+    }
+  }, [historicalMessages, selectedChatId]);
   const handleKeyDown = async (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.shiftKey && e.key === "Enter") {
       e.preventDefault();
@@ -28,6 +51,18 @@ export const ChatWindow = () => {
     }
   };
   const isEmpty: boolean = messages.length === 0;
+  if (isLoadingHistory) {
+    return (
+      <div className="chat-container">
+        <div className="loading-indicator">Loading chat history...</div>
+      </div>
+    );
+  }
+  const handleNewChat = () => {
+    resetSelectedChat();
+    setMessages([]);
+    setInput("");
+  };
   const handleSubmit = async () => {
     if (!input.trim()) return;
 
@@ -75,12 +110,22 @@ export const ChatWindow = () => {
   };
   return (
     <div className={isEmpty ? "chat-container empty" : "chat-container filled"}>
+      {/* Header showing current chat or "New Chat" */}
+      <div className="chat-header">
+        <h2>{selectedChatTitle || "New Chat"}</h2>
+        {selectedChatId && (
+          <button onClick={handleNewChat} className="new-chat-btn">
+            + New Chat
+          </button>
+        )}
+      </div>
+      {/* Message display */}
       {messages.map((msg, idx) => (
         <div key={idx} className={`message ${msg.role}`}>
           <ReactMarkdown>{msg.content}</ReactMarkdown>
         </div>
       ))}
-
+      {/* Input */}
       <div id="input-area" className="input-text-area">
         <textarea
           ref={textAreaRef}
