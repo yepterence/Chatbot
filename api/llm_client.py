@@ -1,106 +1,101 @@
 #!/usr/bin/python3
 
-from ollama import AsyncClient, ChatResponse, chat
 from .models import StreamChunk
 from .logger import get_logger
-from .database import AsyncSessionLocal, get_session
+from .database import get_session
 from .database import create_chat_session, add_message
+from .llm.base import LLMConfig, LLMMessage, LLMProvider
 
 logger = get_logger(__name__)
 logger.setLevel("DEBUG")
-MODEL = "gemma3"
+
 
 class Chat:
-    def __init__(self, chat_id, prompt) -> None:
-        self.title = None
+    """Manages a single in-flight chat exchange.
+
+    Provider-agnostic: receives an LLMProvider at construction time so the
+    same class works with both local Ollama and Google GenAI backends.
+    """
+
+    def __init__(self, chat_id: str, prompt: list, provider: LLMProvider) -> None:
+        self.title: str | None = None
         self.prompt = prompt
-        self.chunks_buffer = []
+        self.chunks_buffer: list[str] = []
         self.llm_response_done = False
         self.cancel_signal = False
         self.chat_id = chat_id
         self.prompt_request_finalized = False
         self.finalized_message = ""
+        self._provider = provider
 
-    def aggregate_chunks(self, delta):
+    def aggregate_chunks(self, delta: str) -> None:
         self.chunks_buffer.append(delta)
 
+    def _to_llm_messages(self, messages: list) -> list[LLMMessage]:
+        result = []
+        for m in messages:
+            role = m.role if hasattr(m, "role") else m["role"]
+            content = m.content if hasattr(m, "content") else m["content"]
+            result.append(LLMMessage(role=role, content=content))
+        return result
 
     async def stream_chat(self):
-        """
-        Streams dicts like {"data": { ... }} for the SSE endpoint to serialize.
-        """
+        """Yield SSE-formatted data lines from the LLM stream.
 
-        client = AsyncClient()
-
-        stream = await client.chat(
-            model=MODEL,
-            messages=self.prompt,
-            stream=True,
-        )
+        Format: ``data: {"content": "...", "finished": false}\\n\\n``
+        """
+        llm_messages = self._to_llm_messages(self.prompt)
+        stream = self._provider.stream(llm_messages, config=LLMConfig())
         logger.info("Chat activated")
 
-        
-        if not self.llm_response_done:
-            async for chunk in stream:
-                if self.cancel_signal:
-                    logger.info("Chat request canceled. Stopping.")
-                    return
-                
-                delta = chunk['message']['content']
-                logger.debug("Received chunk: %s", delta)
-                response_data = StreamChunk(
-                    content=delta,
-                    finished=chunk.get('done', False)
-                )
-                self.llm_response_done = chunk.get('done', False)
-                self.aggregate_chunks(delta)
-                logger.debug("Streaming chunk: %s", response_data)
-                yield f"data: {response_data.model_dump_json()}\n\n"
+        async for chunk in stream:
+            if self.cancel_signal:
+                logger.info("Chat request canceled. Stopping.")
+                return
+            logger.debug("Received chunk: %s", chunk.delta)
+            self.aggregate_chunks(chunk.delta)
+            self.llm_response_done = chunk.finished
+            response_data = StreamChunk(content=chunk.delta, finished=chunk.finished)
+            logger.debug("Streaming chunk: %s", response_data)
+            yield f"data: {response_data.model_dump_json()}\n\n"
 
         logger.info("LLM Response stream concluded.")
 
-    async def persist_chat(self, title):
+    async def persist_chat(self, title: str) -> None:
         async with get_session() as db:
             chat_history = await create_chat_session(title=title, session=db)
             history_id = chat_history.id
-            user_prompt_content = self.prompt[-1].content
+            last = self.prompt[-1]
+            user_prompt_content = last.content if hasattr(last, "content") else last["content"]
             await add_message(
-                    chat_id=history_id,
-                    role="user",
-                    content=user_prompt_content,
-                    created_at=None,
-                    session=db,
-                )
+                chat_id=history_id,
+                role="user",
+                content=user_prompt_content,
+                created_at=None,
+                session=db,
+            )
             await add_message(
-                    chat_id=history_id,
-                    role="assistant",
-                    content=self.finalized_message,
-                    created_at=None,
-                    session=db,
-                )
+                chat_id=history_id,
+                role="assistant",
+                content=self.finalized_message,
+                created_at=None,
+                session=db,
+            )
 
-    async def generate_title(self):
-        system_msg = [{"role": "system",
-                    "content": "Generate a short, clear title (max 5 words) summarizing the user's message and return strictly that."}]
-        title_messages = system_msg + self.prompt
-        title = await self.non_stream_response(title_messages)
-        return title
-
-    async def non_stream_response(self, messages):
-        response: ChatResponse = chat(
-            model=MODEL,
-            messages=messages,
-            stream=False,
+    async def generate_title(self) -> str:
+        system_msg = LLMMessage(
+            role="system",
+            content="Generate a short, clear title (max 5 words) summarizing the user's message and return strictly that.",
         )
-        return response["message"]["content"]
-    
-    async def finalize_streams(self):
+        title_messages = [system_msg] + self._to_llm_messages(self.prompt)
+        response = await self._provider.generate(title_messages, config=LLMConfig(temperature=0.3))
+        return response.text.strip()
+
+    async def finalize_streams(self) -> None:
         if self.cancel_signal or self.prompt_request_finalized:
             return
-        
         if not self.llm_response_done:
             logger.error("Failed to conclude LLM response stream")
             return
-        
         self.finalized_message = "".join(self.chunks_buffer)
         self.prompt_request_finalized = True
