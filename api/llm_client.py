@@ -2,8 +2,8 @@
 
 from .models import StreamChunk
 from .logger import get_logger
-from .database import get_session
-from .database import create_chat_session, add_message
+from .database import session_context
+from .repositories import ChatRepo
 from .llm.base import LLMConfig, LLMMessage, LLMProvider
 
 logger = get_logger(__name__)
@@ -62,24 +62,23 @@ class Chat:
         logger.info("LLM Response stream concluded.")
 
     async def persist_chat(self, title: str) -> None:
-        async with get_session() as db:
-            chat_history = await create_chat_session(title=title, session=db)
+        async with session_context() as db:
+            repo = ChatRepo(db)
+            chat_history = await repo.create_chat_session(title=title)
             history_id = chat_history.id
             last = self.prompt[-1]
             user_prompt_content = last.content if hasattr(last, "content") else last["content"]
-            await add_message(
+            await repo.add_message(
                 chat_id=history_id,
                 role="user",
                 content=user_prompt_content,
                 created_at=None,
-                session=db,
             )
-            await add_message(
+            await repo.add_message(
                 chat_id=history_id,
                 role="assistant",
                 content=self.finalized_message,
                 created_at=None,
-                session=db,
             )
 
     async def generate_title(self) -> str:
