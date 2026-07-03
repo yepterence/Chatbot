@@ -77,6 +77,7 @@ class Interaction(Base):
 
     chat_history = relationship("ChatHistory", back_populates="interactions")
     agent_traces = relationship("AgentTrace", back_populates="interaction", cascade="all, delete-orphan")
+
 class AgentTrace(Base):
     __tablename__ = "agent_traces"
 
