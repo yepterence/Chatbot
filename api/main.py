@@ -9,7 +9,8 @@ import uvicorn
 
 from api import logger
 from .config import Settings
-from .database import get_chat_history, get_session, init_db, get_chat_messages
+from .database import get_session
+from .repositories import ChatRepo
 from .llm.factory import build_llm_provider
 from .llm.base import LLMProvider
 from .llm_client import Chat
@@ -74,7 +75,6 @@ chat_manager = ChatManager(_provider)
 
 @app.on_event("startup")
 async def startup_event():
-    await init_db()
     api_logger.info(
         "Backend started — LLM backend: %s, model: %s",
         settings.llm_backend,
@@ -101,7 +101,8 @@ async def cancel_prompt(request: CancelRequest):
 
 @app.get("/chat/get/{chat_id}")
 async def get_chat_messages_by_id(chat_id, session: AsyncSession = Depends(get_session)):
-    chat = await get_chat_messages(session, chat_id)
+    repo = ChatRepo(session)
+    chat = await repo.get_chat_messages(chat_id)
     if not chat:
         raise HTTPException(status_code=404, detail="Chat messages couldnt be found for id")
     return chat.chat_messages
@@ -109,7 +110,8 @@ async def get_chat_messages_by_id(chat_id, session: AsyncSession = Depends(get_s
 
 @app.get("/chat/history")
 async def get_history(session: AsyncSession = Depends(get_session)):
-    chat_history = await get_chat_history(session)
+    repo = ChatRepo(session)
+    chat_history = await repo.get_chat_history()
     if not chat_history:
         return []
     return [{"id": obj.id, "chat_title": obj.chat_title} for obj in chat_history]
