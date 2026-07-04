@@ -17,13 +17,20 @@ class Chat:
     same class works with both local Ollama and Google GenAI backends.
     """
 
-    def __init__(self, chat_id: str, prompt: list, provider: LLMProvider) -> None:
+    def __init__(
+        self,
+        chat_id: str,
+        prompt: list,
+        provider: LLMProvider,
+        chat_history_id: int | None = None,
+    ) -> None:
         self.title: str | None = None
         self.prompt = prompt
         self.chunks_buffer: list[str] = []
         self.llm_response_done = False
         self.cancel_signal = False
         self.chat_id = chat_id
+        self.chat_history_id = chat_history_id
         self.prompt_request_finalized = False
         self.finalized_message = ""
         self._provider = provider
@@ -61,11 +68,23 @@ class Chat:
 
         logger.info("LLM Response stream concluded.")
 
-    async def persist_chat(self, title: str) -> None:
+    async def persist_chat(self, title: str | None = None) -> int:
         async with session_context() as db:
             repo = ChatRepo(db)
-            chat_history = await repo.create_chat_session(title=title)
-            history_id = chat_history.id
+            if self.chat_history_id is not None:
+                chat_history = await repo.get_chat_messages(self.chat_history_id)
+                if chat_history is None:
+                    raise ValueError(
+                        f"Chat history id {self.chat_history_id} not found"
+                    )
+                history_id = chat_history.id
+            else:
+                if not title:
+                    raise ValueError("title is required when starting a new chat session")
+                chat_history = await repo.create_chat_session(title=title)
+                history_id = chat_history.id
+                self.chat_history_id = history_id
+
             last = self.prompt[-1]
             user_prompt_content = last.content if hasattr(last, "content") else last["content"]
             await repo.add_message(
@@ -80,6 +99,7 @@ class Chat:
                 content=self.finalized_message,
                 created_at=None,
             )
+            return history_id
 
     async def generate_title(self) -> str:
         system_msg = LLMMessage(

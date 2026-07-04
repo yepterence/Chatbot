@@ -9,6 +9,7 @@ class Message(BaseModel):
 
 class ChatRequest(BaseModel):
     messages: List[Message]
+    chat_history_id: Optional[int] = None
 
 class CancelRequest(BaseModel):
     chat_id: str

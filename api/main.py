@@ -36,9 +36,13 @@ class ChatManager:
         self._provider = provider
         self.chats: dict[str, Chat] = {}
 
-    def create_chat_instance(self, prompt) -> Chat:
+    def create_chat_instance(
+        self, prompt, chat_history_id: int | None = None
+    ) -> Chat:
         chat_execution_id = str(uuid4())
-        chat_instance = Chat(chat_execution_id, prompt, self._provider)
+        chat_instance = Chat(
+            chat_execution_id, prompt, self._provider, chat_history_id=chat_history_id
+        )
         self.chats[chat_execution_id] = chat_instance
         return chat_instance
 
@@ -60,9 +64,13 @@ class ChatManager:
                 yield chunk
             if chat.llm_response_done and not chat.cancel_signal:
                 await chat.finalize_streams()
-                api_logger.info("Finished streaming. Generating title and persisting.")
-                title = await chat.generate_title()
-                await chat.persist_chat(title)
+                if chat.chat_history_id is None:
+                    api_logger.info("Finished streaming. Generating title and persisting.")
+                    title = await chat.generate_title()
+                    await chat.persist_chat(title)
+                else:
+                    api_logger.info("Finished streaming. Appending to existing chat.")
+                    await chat.persist_chat()
                 api_logger.info("Chat persisted.")
         except Exception as e:
             api_logger.exception("Failed to stream llm response", exc_info=e)
@@ -84,7 +92,9 @@ async def startup_event():
 
 @app.post("/chat")
 async def chat(request: ChatRequest):
-    chat_instance = chat_manager.create_chat_instance(request.messages)
+    chat_instance = chat_manager.create_chat_instance(
+        request.messages, request.chat_history_id
+    )
     return StreamingResponse(
         chat_manager.stream_and_cleanup(chat_instance),
         media_type="text/event-stream",
