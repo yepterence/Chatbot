@@ -47,6 +47,7 @@ export const ChatWindow = () => {
       textArea!.style.height = "auto";
       textArea!.style.height = textArea?.scrollHeight + "px";
     } else if (e.key === "Enter") {
+      e.preventDefault();
       await handleSubmit();
     }
   };
@@ -75,7 +76,7 @@ export const ChatWindow = () => {
     responseBuffer.current = "";
     try {
       await streamChatResponse(
-        [{ role: "user", content: userPrompt }],
+        [...messages,{ role: "user", content: userPrompt }],
         (chunk) => {
           //  Update buffer synchronously
           responseBuffer.current += chunk.content;
