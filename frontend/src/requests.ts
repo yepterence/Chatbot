@@ -19,7 +19,7 @@ export async function fetchChatHistoryList() {
  * @param chatId
  * @returns
  */
-export async function fetchChatMessages(chatId: Number) {
+export async function fetchChatMessages(chatId: number) {
   const url = `http://127.0.0.1:8000/chat/get/${chatId}`;
   try {
     const res = await fetch(url);
